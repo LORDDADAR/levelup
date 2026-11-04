@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>LEVELUP</title>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+:root {
+    --bg-main: #f6f3eb;
+    --card-bg: #ffffff;
+    --text-main: #2d2d2d;
+    --text-muted: #8b8b8b;
+    --accent-orange: #ff6b4a;
+    --accent-gold: #f2b544;
+    --accent-green: #4cd137;
+    --line: #f0f0f0;
+    --shadow: 0 8px 24px rgba(0,0,0,0.04);
+    --input-bg: #f6f3eb;
+    --accordion-bg: #faf8f5;
+    --nav-bg: #ffffff;
+}
+
+body.dark-theme {
+    --bg-main: #121212;
+    --card-bg: #1e1e1e;
+    --text-main: #ffffff;
+    --text-muted: #aaaaaa;
+    --accent-orange: #ff6b4a;
+    --accent-gold: #f2b544;
+    --accent-green: #4cd137;
+    --line: #333333;
+    --shadow: 0 8px 24px rgba(0,0,0,0.3);
+    --input-bg: #2d2d2d;
+    --accordion-bg: #252525;
+    --nav-bg: #1e1e1e;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Nunito', sans-serif; }
+body { margin: 0; padding: 0; background: var(--bg-main); color: var(--text-main); min-height: 100vh; padding-bottom: 100px; overflow-x: hidden; transition: background 0.3s, color 0.3s; }
+.app { width: 100%; max-width: 520px; margin: 0 auto; padding: 20px 15px; }
+
+h1 { font-size: 28px; font-weight: 900; margin: 0; letter-spacing: 1px; }
+h2 { font-size: 18px; font-weight: 800; margin: 0 0 15px 0; }
+.muted { color: var(--text-muted); }
+.small { font-size: 13px; }
+.tiny { font-size: 11px; }
+
+.card { background: var(--card-bg); border-radius: 24px; padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); transition: background 0.3s; }
+
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.header-left { display: flex; flex-direction: column; }
+.currency-pill { background: var(--card-bg); border-radius: 20px; padding: 8px 14px; display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow); font-weight: 800; font-size: 14px; }
+
+.profile-row { display: flex; align-items: center; gap: 15px; }
+.avatar { width: 60px; height: 60px; border-radius: 50%; background: var(--input-bg); display: flex; justify-content: center; align-items: center; font-size: 30px; border: 2px solid var(--accent-gold); }
+.profile-name { font-size: 22px; font-weight: 900; line-height: 1.1; cursor: pointer; }
+.rank-badge { background: var(--accent-gold); color: #fff; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 800; display: inline-block; margin-top: 4px; }
+.profile-tag { font-size: 11px; color: var(--accent-orange); font-weight: 800; margin-top: 5px; letter-spacing: 0.5px; }
+
+.streak-badge { background: #ffe4d6; color: #ff6b4a; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 800; display: inline-block; margin-left: 8px; }
+
+.theme-toggle { background: var(--input-bg); border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; color: var(--text-main); }
+
+.xp-container { margin-top: 20px; cursor: pointer; }
+.xp-text { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
+.bar-bg { background: var(--input-bg); height: 10px; border-radius: 10px; overflow: hidden; }
+.bar-fill { background: var(--accent-gold); height: 100%; border-radius: 10px; transition: width 0.4s ease; }
+
+.btn { border: none; border-radius: 16px; padding: 16px; font-size: 16px; font-weight: 800; cursor: pointer; width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; transition: 0.2s; }
+.btn.primary { background: var(--accent-orange); color: #fff; box-shadow: 0 4px 12px rgba(255, 107, 74, 0.3); }
+.btn.secondary { background: var(--input-bg); color: var(--text-main); }
+.btn.danger { background: rgba(255, 107, 74, 0.1); color: var(--accent-orange); }
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.5; box-shadow: none; }
+
+.exercise-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.exercise-row:last-child { border-bottom: none; }
+.exercise-info { display: flex; flex-direction: column; gap: 2px; }
+.exercise-name { font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.exercise-xp { font-size: 12px; color: var(--accent-orange); font-weight: 700; }
+.exercise-total { font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
+.exercise-input-group { display: flex; gap: 8px; align-items: center; }
+.input-box { background: var(--input-bg); border: none; border-radius: 12px; padding: 10px; width: 70px; text-align: center; font-size: 16px; font-weight: 700; outline: none; color: var(--text-main); }
+.btn-plus { background: var(--accent-orange); color: #fff; border: none; border-radius: 12px; width: 42px; height: 42px; font-size: 24px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; padding-bottom: 2px; }
+
+.accordion { border-radius: 20px; background: var(--accordion-bg); margin-bottom: 12px; overflow: hidden; }
+.accordion-header { padding: 16px; display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 16px; cursor: pointer; color: var(--text-main); }
+.accordion-content { display: none; padding: 0 16px 16px 16px; }
+.accordion-content.active { display: block; }
+
+.list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.list-item:last-child { border-bottom: none; }
+
+.shop-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 15px; }
+.shop-tab { padding: 10px 4px; border-radius: 12px; background: var(--input-bg); border: none; font-weight: 800; font-size: 11px; color: var(--text-muted); cursor: pointer; transition: 0.2s; text-align: center; }
+.shop-tab.active { background: var(--text-main); color: var(--bg-main); }
+
+.top-tabs { display: flex; gap: 6px; margin-bottom: 15px; }
+.top-tab { flex: 1; padding: 10px 4px; border-radius: 12px; background: var(--input-bg); border: none; font-weight: 800; font-size: 11px; color: var(--text-muted); cursor: pointer; transition: 0.2s; text-align: center; }
+.top-tab.active { background: var(--text-main); color: var(--bg-main); }
+
+.shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.shop-item { background: var(--accordion-bg); border-radius: 16px; padding: 15px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+.bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 520px; background: var(--nav-bg); padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); display: flex; justify-content: space-around; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); z-index: 100; border-radius: 24px 24px 0 0; transition: background 0.3s; }
+.nav-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-muted); font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+.nav-btn .nav-icon { font-size: 24px; }
+.nav-btn.active { color: var(--accent-orange); }
+
+.screen { display: none; animation: fadeIn 0.3s; } .screen.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+#character-creation { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; position: fixed; top: 0; left: 0; width: 100%; background: var(--bg-main); z-index: 100; padding: 20px; }
+#character-creation input { width: 100%; max-width: 300px; padding: 18px; font-size: 18px; border-radius: 16px; border: none; background: var(--card-bg); box-shadow: var(--shadow); margin-bottom: 20px; text-align: center; outline: none; font-weight: 700; color: var(--text-main); }
+.hidden { display: none !important; }
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 470px; z-index: 50; background: var(--text-main); color: var(--bg-main); border-radius: 16px; padding: 14px 20px; font-weight: 700; text-align: center; box-shadow: var(--shadow); display: none; }
+.toast.show { display: block; animation: slideDown 0.3s; }
+@keyframes slideDown { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.modal-back { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 200; }
+.modal-back.show { display: flex; }
+.modal { width: 100%; max-width: 350px; background: var(--card-bg); border-radius: 24px; padding: 24px; text-align: center; max-height: 80vh; overflow-y: auto; }
+.rank-sss { color: #fff; text-shadow: 0 0 5px #000, 0 0 10px #000; font-weight: 900; }
+.history-item { border-bottom: 1px solid var(--line); padding: 8px 0; font-size: 12px; color: var(--text-muted); }
+.history-item:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<div id="character-creation">
+    <h1>СОЗДАНИЕ ПРОФИЛЯ</h1>
+    <p class="muted" style="margin-bottom:20px; font-weight:600;">Введи свое имя:</p>
+    <input type="text" id="player-name-input" placeholder="Твой ник..." maxlength="15">
+    <button class="btn primary" style="max-width:300px;" onclick="createCharacter()">НАЧАТЬ ПУТЬ</button>
+</div>
+
+<div class="app hidden" id="main-app">
+    <header class="header">
+        <div class="header-left">
+            <h1 style="color:var(--accent-gold);">LEVELUP</h1>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <div class="currency-pill">🌑 <span id="walletShadows">0</span></div>
+            <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()">🌙</button>
+        </div>
+    </header>
+
+    <section id="screen-profile" class="screen active">
+        <div class="card">
+            <div class="profile-row">
+                <div class="avatar" id="profileAvatar">👤</div>
+                <div style="flex:1;">
+                    <div style="display:flex; align-items:center;">
+                        <div class="profile-name" id="profileName" onclick="changeName()">DADAR</div>
+                        <div class="streak-badge" id="profileStreak">🔥 0</div>
+                    </div>
+                    <div class="rank-badge" id="profileRank">РАНГ F</div>
+                    <div class="profile-tag" id="profileTag" style="display:none;"></div>
+                </div>
+                <div style="text-align:right;">
+                    <div class="tiny muted">УРОВЕНЬ</div>
+                    <h1 class="gold" id="profileLevel" style="font-size:32px; color:var(--accent-gold);">1</h1>
+                </div>
+            </div>
+            <div class="xp-container" onclick="openRankModal()">
+                <div class="xp-text">
+                    <span>Опыт (нажми для просмотра рангов)</span>
+                    <span id="xpText">0 / 100 XP</span>
+                </div>
+                <div class="bar-bg"><div class="bar-fill" id="xpBar" style="width:0%"></div></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Тренировка</h2>
+            <div class="exercise-row">
+                <div class="exercise-info">
+                    <div class="exercise-name">💪 Отжимания</div>
+                    <div class="exercise-xp">2 XP за повтор</div>
+                    <div class="exercise-total">Всего: <span id="total-pushups">0</span></div>
+                </div>
+                <div class="exercise-input-group">
+                    <input class="input-box" id="input-pushups" type="number" placeholder="0">
+                    <button class="btn-plus" onclick="addWorkout('pushups')">+</button>
+                </div>
+            </div>
+            <div class="exercise-row">
+                <div class="exercise-info">
+                    <div class="exercise-name">🧗 Подтягивания</div>
+                    <div class="exercise-xp">5 XP за повтор</div>
+                    <div class="exercise-total">Всего: <span id="total-pullups">0</span></div>
+                </div>
+                <div class="exercise-input-group">
+                    <input class="input-box" id="input-pullups" type="number" placeholder="0">
+                    <button class="btn-plus" onclick="addWorkout('pullups')">+</button>
+                </div>
+            </div>
+            <div class="exercise-row">
+                <div class="exercise-info">
+                    <div class="exercise-name">🦵 Приседания</div>
+                    <div class="exercise-xp">1.5 XP за повтор</div>
+                    <div class="exercise-total">Всего: <span id="total-squats">0</span></div>
+                </div>
+                <div class="exercise-input-group">
+                    <input class="input-box" id="input-squats" type="number" placeholder="0">
+                    <button class="btn-plus" onclick="addWorkout('squats')">+</button>
+                </div>
+            </div>
+            <div class="exercise-row">
+                <div class="exercise-info">
+                    <div class="exercise-name">👟 Шаги</div>
+                    <div class="exercise-xp">0.03 XP за метр</div>
+                    <div class="exercise-total">Всего: <span id="total-steps">0</span></div>
+                </div>
+                <div class="exercise-input-group">
+                    <input class="input-box" id="input-steps" type="number" placeholder="0">
+                    <button class="btn-plus" onclick="addWorkout('steps')">+</button>
+                </div>
+            </div>
+        </div>
+        <button class="btn secondary" onclick="undoLastWorkout()" style="margin-bottom:10px;">Отменить последнее</button>
+        <button class="btn danger" onclick="resetGame()">Сбросить прогресс</button>
+        
+        <div class="card" style="margin-top:16px;">
+            <h2>История</h2>
+            <div id="historyList"></div>
+        </div>
+    </section>
+
+    <section id="screen-bosses" class="screen">
+        <div class="card">
+            <h2>Боссы Стихий</h2>
+            <div id="bossList"></div>
+        </div>
+    </section>
+
+    <section id="screen-dungeons" class="screen">
+        <div class="card">
+            <h2 id="dungeonTitle">Подземелья</h2>
+            <div id="dungeonList"></div>
+        </div>
+    </section>
+
+    <section id="screen-tops" class="screen">
+        <div class="card">
+            <h2>Топы игроков</h2>
+            <div class="top-tabs" style="margin-bottom:15px;">
+                <button class="top-tab active" onclick="setTopMode('world')" id="btn-top-world">🌍 Мир</button>
+                <button class="top-tab" onclick="setTopMode('friends')" id="btn-top-friends">🤝 Друзья</button>
+            </div>
+            <div class="shop-tabs" id="top-exercise-tabs">
+                <button class="shop-tab active" onclick="setTopTab('pushups')">Отжим.</button>
+                <button class="shop-tab" onclick="setTopTab('pullups')">Подтяг.</button>
+                <button class="shop-tab" onclick="setTopTab('squats')">Присед.</button>
+                <button class="shop-tab" onclick="setTopTab('steps')">Шаги</button>
+            </div>
+            <button class="btn secondary" style="margin-bottom:15px;" onclick="loadLeaderboard()">Обновить список</button>
+            <div id="topsList"></div>
+        </div>
+    </section>
+
+    <section id="screen-shop" class="screen">
+        <div class="card">
+            <h2>Магазин</h2>
+            <div id="shopList"></div>
+        </div>
+    </section>
+</div>
+
+<nav class="bottom-nav hidden" id="bottomnav">
+    <button class="nav-btn active" data-screen="profile" onclick="go('profile')"><span class="nav-icon">🏠</span>Профиль</button>
+    <button class="nav-btn" data-screen="bosses" onclick="go('bosses')"><span class="nav-icon">👹</span>Боссы</button>
+    <button class="nav-btn" data-screen="dungeons" onclick="go('dungeons')"><span class="nav-icon">🏰</span>Подземелья</button>
+    <button class="nav-btn" data-screen="tops" onclick="go('tops')"><span class="nav-icon">🏆</span>Топы</button>
+    <button class="nav-btn" data-screen="shop" onclick="go('shop')"><span class="nav-icon">🛒</span>Магазин</button>
+</nav>
+
+<div class="modal-back" id="modalBack" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+        <h2 id="modalTitle" style="font-size:24px; margin-bottom:15px;">LEVELUP</h2>
+        <div id="modalBody"></div>
+        <button class="btn secondary" style="margin-top:20px;" onclick="closeModal()">Понятно</button>
+    </div>
+</div>
+<script>
+// --- FIREBASE CONFIG ---
+const firebaseConfig = {
+  apiKey: "AIzaSyAUzdbkD_Pg-OpxmMPfZuKkFbshsXqnD5c",
+  authDomain: "dadar-6863b.firebaseapp.com",
+  projectId: "dadar-6863b",
+  storageBucket: "dadar-6863b.firebasestorage.app",
+  messagingSenderId: "633560580799",
+  appId: "1:633560580799:web:8b82a9600b678c23f5fc0a",
+  measurementId: "G-92NZCLJ5EH"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+
+// Принудительно говорим Firebase запомнить пользователя
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch((error) => {
+  console.error("Ошибка сохранения сессии:", error);
+});
+
+// --- НАСТРОЙКИ ---
+const XP_RATE = { pushups: 2, pullups: 5, squats: 1.5, steps: 0.03 };
+const EXERCISES = { pushups: 'Отжимания', pullups: 'Подтягивания', squats: 'Приседания', steps: 'Шаги' };
+const RANKS = [
+    { name: 'F', level: 1, color: '#8b8b8b' },
+    { name: 'E', level: 10, color: '#4cd137' },
+    { name: 'D', level: 20, color: '#4a90e2' },
+    { name: 'C', level: 30, color: '#8c7ae6' },
+    { name: 'B', level: 45, color: '#f2b544' },
+    { name: 'A', level: 60, color: '#ff6b4a' },
+    { name: 'S', level: 80, color: '#e056fd' },
+    { name: 'SS', level: 90, color: '#ff0000' },
+    { name: 'SSS', level: 100, color: '#ffffff', isSss: true }
+];
+
+const ELEMENTS = {
+    fire: { name: 'Огонь', stat: 'pushups', emoji: '🔥', color: '#ff6b4a', names: ['Огненный Лис', 'Пепельный Волк', 'Магмовый Голем', 'Саламандра', 'Дракон Вулкана', 'Феникс', 'Пожиратель Огня', 'Повелитель Пепла', 'Демон Пламени', 'Владыка Инферно'] },
+    air: { name: 'Воздух', stat: 'pullups', emoji: '💨', color: '#f2b544', names: ['Небесный Ястреб', 'Штормовой Орел', 'Грифон', 'Сильф', 'Джинн Ветров', 'Дух Урагана', 'Повелитель Бурь', 'Смерч', 'Ангел Шторма', 'Владыка Небес'] },
+    water: { name: 'Вода', stat: 'squats', emoji: '💧', color: '#4a90e2', names: ['Ледяной Клык', 'Глубинный Кракен', 'Сирена', 'Морской Дракон', 'Ледяной Голем', 'Дух Приливов', 'Пожиратель Глубин', 'Левиафан', 'Хранитель Океана', 'Царь Глубин'] },
+    earth: { name: 'Земля', stat: 'steps', emoji: '🌿', color: '#4cd137', names: ['Каменный Страж', 'Горный Тролль', 'Лесной Дух', 'Земляной Червь', 'Каменный Голем', 'Горгулья', 'Древний Титан', 'Хранитель Рудника', 'Король Гор', 'Владыка Земли'] }
+};
+const BOSS_REQS = {
+    pushups: [100, 300, 700, 1500, 3000, 6000, 10000, 16000, 25000, 40000],
+    pullups: [20, 60, 120, 250, 500, 900, 1500, 2500, 4000, 7000],
+    squats: [150, 400, 900, 1800, 3500, 6500, 11000, 18000, 28000, 45000],
+    steps: [10000, 30000, 75000, 150000, 300000, 500000, 800000, 1200000, 1800000, 2500000]
+};
+const SHOP_ITEMS = [
+    { id: 'av_wolf', name: 'Волк', desc: 'Аватар', price: 120, type: 'avatar', cat: 'avatars', value: '🐺' },
+    { id: 'av_crown', name: 'Корона', desc: 'Аватар', price: 250, type: 'avatar', cat: 'avatars', value: '👑' },
+    { id: 'av_dragon', name: 'Дракон', desc: 'Аватар', price: 400, type: 'avatar', cat: 'avatars', value: '🐉' },
+    { id: 'av_samurai', name: 'Самурай', desc: 'Аватар', price: 600, type: 'avatar', cat: 'avatars', value: '⚔️' },
+    { id: 'color_gold', name: 'Золотой', desc: 'Цвет ника', price: 200, type: 'color', cat: 'colors', value: '#f2b544' },
+    { id: 'color_red', name: 'Красный', desc: 'Цвет ника', price: 200, type: 'color', cat: 'colors', value: '#ff6b4a' },
+    { id: 'color_blue', name: 'Синий', desc: 'Цвет ника', price: 200, type: 'color', cat: 'colors', value: '#4a90e2' },
+    { id: 'color_rainbow', name: 'Радужный', desc: 'Цвет ника', price: 1000, type: 'color', cat: 'colors', value: 'rainbow' },
+    { id: 'bg_fire', name: 'Огненный', desc: 'Фон профиля', price: 500, type: 'bg', cat: 'bgs', value: 'bg-fire' },
+    { id: 'bg_void', name: 'Бездна', desc: 'Фон профиля', price: 800, type: 'bg', cat: 'bgs', value: 'bg-void' },
+    { id: 'bg_gold', name: 'Золотой', desc: 'Фон профиля', price: 1500, type: 'bg', cat: 'bgs', value: 'bg-gold' }
+];
+const SAVE_KEY = 'levelup_save_v59';
+
+let player;
+let currentShopTab = 'avatars';
+let currentTopTab = 'pushups';
+let currentTopMode = 'world';
+let openElements = { fire: true, air: false, water: false, earth: false };
+let queueModal = [];
+let isModalOpen = false;
+let dungeonStep = 1;
+let selectedDungeonStat = '';
+let userId = null;
+let allPlayers = []; 
+
+// --- УТИЛИТЫ ---
+function fmt(n) { return Number(n.toFixed(2)).toLocaleString('ru-RU', { maximumFractionDigits: 2 }); }
+function dateKey() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+function yesterdayKey() { const d = new Date(); d.setDate(d.getDate() - 1); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+function notify(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast show';
+    setTimeout(() => el.className = 'toast', 3000);
+}
+function addToHistory(text) {
+    if (!player.history) player.history = [];
+    const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    player.history.unshift(`[${time}] ${text}`);
+    if (player.history.length > 15) player.history.pop();
+    renderHistory();
+}
+function save() { 
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(player)); } catch (e) {} 
+    if (userId) {
+        db.collection('users').doc(userId).set(player).catch(e => console.log("Firebase save error", e));
+    }
+}
+function freshPlayer(name) {
+    return {
+        name: name, level: 1, xp: 0, xpNeeded: 100,
+        stats: { pushups: 0, pullups: 0, squats: 0, steps: 0 },
+        shadows: 300, bosses: {}, dungeon: null, dungeonDate: '',
+        inventory: [], avatar: '👤', nameColor: '#2d2d2d', bgClass: '',
+        tag: '', workouts: [], theme: 'light', streak: 0, lastLogin: '',
+        history: [], friends: []
+    };
+}
+function safeLoad() { try { const raw = localStorage.getItem(SAVE_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
+
+// --- ЯДРО ---
+function getRankObj(level) {
+    let current = RANKS[0];
+    for (let r of RANKS) { if (level >= r.level) current = r; }
+    return current;
+}
+function needXP(level) {
+    if (level <= 5) return Math.floor((100 + level * 50) * 0.7);
+    if (level <= 20) return Math.floor((500 + (level - 5) * 200) * 0.7);
+    if (level <= 50) return Math.floor((5000 + (level - 20) * 800) * 0.7);
+    if (level <= 80) return Math.floor((30000 + (level - 50) * 1500) * 0.7);
+    return Math.floor((80000 + (level - 80) * 2000) * 0.7);
+}
+function addXP(amount) {
+    const oldLevel = player.level;
+    player.xp += amount;
+    let levelsGained = 0;
+    while (player.xp >= player.xpNeeded && player.level < 999) {
+        player.xp -= player.xpNeeded;
+        player.level++;
+        player.xpNeeded = needXP(player.level);
+        levelsGained++;
+    }
+    return { levelsGained, oldLevel, newLevel: player.level };
+}
+
+// --- ТРЕНИРОВКИ ---
+function addWorkout(stat) {
+    const input = document.getElementById('input-' + stat);
+    const amount = Number(input.value);
+    if (!Number.isSafeInteger(amount) || amount <= 0) { notify('Введи целое число > 0'); return; }
+
+    const xp = amount * XP_RATE[stat];
+    player.stats[stat] += amount;
+    player.workouts.push({ stat, amount, xp, date: new Date().toISOString() });
+
+    const lvlData = addXP(xp);
+    
+    const today = dateKey();
+    if (player.lastLogin !== today) {
+        if (player.lastLogin === yesterdayKey()) player.streak++;
+        else player.streak = 1;
+        player.lastLogin = today;
+        addToHistory('Серия: ' + player.streak + ' дней!');
+    }
+
+    let newBosses = [];
+    Object.keys(ELEMENTS).forEach(el => {
+        if (ELEMENTS[el].stat === stat) {
+            for (let i = 1; i <= 10; i++) {
+                const id = el + '_' + i;
+                if (!player.bosses[id] && bossUnlocked(el, i) && player.stats[stat] >= bossRequirement(el, i)) {
+                    player.bosses[id] = true;
+                    player.shadows += (35 + i * 20);
+                    newBosses.push(ELEMENTS[el].names[i-1]);
+                }
+            }
+        }
+    });
+
+    if (player.dungeon && player.dungeon.stat === stat && !player.dungeon.completed) {
+        player.dungeon.current += amount;
+        if (player.dungeon.current >= player.dungeon.target) {
+            player.dungeon.completed = true;
+            addToHistory('Подземелье пройдено! Награда: ' + player.dungeon.reward + ' Теней');
+        }
+    }
+
+    addToHistory(`+${amount} ${EXERCISES[stat]} (+${fmt(xp)} XP)`);
+
+    input.value = '';
+    save(); renderAll();
+
+    if (newBosses.length > 0) queueModal.push({ type: 'boss', data: newBosses });
+    if (lvlData.levelsGained > 0) queueModal.push({ type: 'level', data: lvlData.newLevel });
+    
+    processModalQueue();
+}
+
+// --- ОТМЕНА ДЕЙСТВИЯ ---
+function undoLastWorkout() {
+    if (player.workouts.length === 0) { notify('Нет тренировок для отмены'); return; }
+    
+    const last = player.workouts[player.workouts.length - 1];
+    const stat = last.stat;
+    const amount = last.amount;
+    
+    player.stats[stat] = Math.max(0, player.stats[stat] - amount);
+    
+    let totalXP = 0;
+    player.workouts.forEach((w, index) => {
+        if (index !== player.workouts.length - 1) totalXP += w.xp;
+    });
+    
+    let newLevel = 1;
+    let xpLeft = totalXP;
+    let xpNeeded = 100;
+    
+    while (xpLeft >= xpNeeded && newLevel < 999) {
+        xpLeft -= xpNeeded;
+        newLevel++;
+        if (newLevel <= 5) xpNeeded = Math.floor((100 + newLevel * 50) * 0.7);
+        else if (newLevel <= 20) xpNeeded = Math.floor((500 + (newLevel - 5) * 200) * 0.7);
+        else if (newLevel <= 50) xpNeeded = Math.floor((5000 + (newLevel - 20) * 800) * 0.7);
+        else if (newLevel <= 80) xpNeeded = Math.floor((30000 + (newLevel - 50) * 1500) * 0.7);
+        else xpNeeded = Math.floor((80000 + (newLevel - 80) * 2000) * 0.7);
+    }
+    
+    const oldLevel = player.level;
+    player.level = newLevel;
+    player.xp = xpLeft;
+    player.xpNeeded = xpNeeded;
+    
+    let lostShadows = 0;
+    Object.keys(player.bosses).forEach(id => {
+        if (player.bosses[id]) {
+            const [el, idxStr] = id.split('_');
+            const idx = parseInt(idxStr);
+            if (ELEMENTS[el].stat === stat && player.stats[stat] < bossRequirement(el, idx)) {
+                player.bosses[id] = false;
+                lostShadows += (35 + idx * 20);
+            }
+        }
+    });
+    player.shadows = Math.max(0, player.shadows - lostShadows);
+    
+    if (player.dungeon && player.dungeon.stat === stat && !player.dungeon.completed) {
+        player.dungeon.current = Math.max(0, player.dungeon.current - amount);
+    }
+    
+    let totalSpent = 0;
+    player.inventory.forEach(itemId => {
+        const item = SHOP_ITEMS.find(i => i.id === itemId);
+        if (item) totalSpent += item.price;
+    });
+    
+    if (player.shadows < totalSpent) {
+        while (player.shadows < totalSpent && player.inventory.length > 0) {
+            let removedId = player.inventory.pop();
+            let removedItem = SHOP_ITEMS.find(i => i.id === removedId);
+            if (removedItem) {
+                totalSpent -= removedItem.price;
+                if (removedItem.type === 'avatar' && player.avatar === removedItem.value) player.avatar = '👤';
+                if (removedItem.type === 'color' && player.nameColor === removedItem.value) player.nameColor = '#2d2d2d';
+                if (removedItem.type === 'bg' && player.bgClass === removedItem.value) player.bgClass = '';
+            }
+        }
+        notify('⚠️ Не хватило Теней, некоторые вещи изъяты!');
+    }
+    
+    player.workouts.pop();
+    addToHistory(`Отменено: ${amount} ${EXERCISES[stat]}`);
+    
+    save(); renderAll();
+    if (oldLevel > newLevel) notify('Уровень понижен до ' + newLevel);
+    else notify('Последняя тренировка отменена');
+}
+
+// --- БОССЫ ---
+function totalBosses() { return Object.values(player.bosses).filter(Boolean).length; }
+function bossRequirement(el, idx) { return BOSS_REQS[ELEMENTS[el].stat][idx - 1]; }
+function bossUnlocked(el, idx) {
+    const prev = idx === 1 || !!player.bosses[el + '_' + (idx - 1)];
+    return prev && player.stats[ELEMENTS[el].stat] >= bossRequirement(el, idx);
+}
+function toggleElement(el) {
+    openElements[el] = !openElements[el];
+    renderBosses();
+}
+// --- ПОДЗЕМЕЛЬЯ ---
+function startDungeon(stat, diff) {
+    if (player.dungeonDate === dateKey()) { notify('Ты уже проходил подземелье сегодня!'); return; }
+    
+    const reqMult = { 1: 1, 2: 2.5, 3: 5 }[diff];
+    const baseReq = { pushups: 20, pullups: 5, squats: 30, steps: 1000 }[stat];
+    const target = Math.floor((baseReq + (player.level * baseReq * 0.1)) * reqMult);
+    const reward = { 1: 40, 2: 80, 3: 150 }[diff] + (player.level * 5);
+    
+    player.dungeon = { stat, diff, target, current: 0, completed: false, reward };
+    player.dungeonDate = dateKey();
+    dungeonStep = 3;
+    save(); renderAll();
+    notify('Подземелье начато! Сделай ' + target + ' раз.');
+    addToHistory('Начато подземелье: ' + EXERCISES[stat]);
+}
+
+function collectDungeonReward() {
+    if (!player.dungeon || !player.dungeon.completed) return;
+    player.tag = 'Покоритель подземелий';
+    player.shadows += player.dungeon.reward;
+    addToHistory('Подземелье пройдено! +' + player.dungeon.reward + ' Теней');
+    player.dungeon = null;
+    dungeonStep = 1;
+    save(); renderAll();
+    notify('Награда получена, титул обновлен!');
+}
+
+// --- РАНГИ ---
+function openRankModal() {
+    let html = '<div style="text-align:left; font-size:13px; line-height:1.6;">';
+    RANKS.forEach((r, i) => {
+        const nextLevel = i < RANKS.length - 1 ? RANKS[i+1].level : 'MAX';
+        const isActive = getRankObj(player.level).name === r.name;
+        
+        let style = `font-weight:900; color:${r.color}; `;
+        if (r.isSss) {
+            style = `font-weight:900; color:#fff; text-shadow:0 0 5px #000, 0 0 10px #000; `;
+        }
+        
+        html += `<div style="display:flex; justify-content:space-between; align-items:center; padding:8px; background:${isActive ? 'var(--input-bg)' : 'transparent'}; border-radius:8px; margin-bottom:4px;">
+            <span style="${style}">РАНГ ${r.name}</span>
+            <span class="muted">Уровни ${r.level} - ${nextLevel}</span>
+        </div>`;
+    });
+    html += '</div>';
+    openModal('ВСЕ РАНГИ', html);
+}
+
+// --- ТЕМЫ И НИК ---
+function toggleTheme() {
+    player.theme = player.theme === 'light' ? 'dark' : 'light';
+    document.body.className = player.theme === 'dark' ? 'dark-theme' : '';
+    document.getElementById('themeBtn').textContent = player.theme === 'dark' ? '☀️' : '🌙';
+    save();
+}
+
+// --- СМЕНА НИКА С ПРОВЕРКОЙ УНИКАЛЬНОСТИ ---
+function changeName() {
+    const newName = prompt('Введи новый ник (до 15 символов):', player.name);
+    if (newName && newName.trim().length > 0) {
+        const trimmedName = newName.trim().substring(0, 15);
+        
+        db.collection('users').where('name', '==', trimmedName).get().then((snapshot) => {
+            if (!snapshot.empty && snapshot.docs[0].id !== userId) {
+                notify('Этот ник уже занят другим игроком!');
+            } else {
+                player.name = trimmedName;
+                save(); renderAll();
+                addToHistory('Ник изменен на: ' + trimmedName);
+                notify('Ник успешно изменен!');
+            }
+        }).catch((err) => {
+            console.error("Ошибка проверки ника", err);
+            player.name = trimmedName;
+            save(); renderAll();
+        });
+    }
+}
+
+// --- ИСТОРИЯ ---
+function renderHistory() {
+    const box = document.getElementById('historyList');
+    if (!box) return;
+    if (!player.history || player.history.length === 0) {
+        box.innerHTML = '<div class="small muted" style="text-align:center;">Пока нет действий</div>';
+        return;
+    }
+    box.innerHTML = player.history.map(h => `<div class="history-item">${h}</div>`).join('');
+}
+
+// --- ТОПЫ (МИР И ДРУЗЬЯ) ---
+function setTopMode(mode) {
+    currentTopMode = mode;
+    document.getElementById('btn-top-world').classList.toggle('active', mode === 'world');
+    document.getElementById('btn-top-friends').classList.toggle('active', mode === 'friends');
+    renderTops();
+}
+
+function setTopTab(tab) {
+    currentTopTab = tab;
+    document.querySelectorAll('#top-exercise-tabs .shop-tab').forEach((btn, i) => {
+        const keys = ['pushups', 'pullups', 'squats', 'steps'];
+        btn.classList.toggle('active', keys[i] === tab);
+    });
+    renderTops();
+}
+
+function loadLeaderboard() {
+    db.collection('users').get().then((querySnapshot) => {
+        allPlayers = [];
+        querySnapshot.forEach((doc) => {
+            let p = doc.data();
+            p.id = doc.id;
+            allPlayers.push(p);
+        });
+        renderTops();
+    }).catch((error) => {
+        console.error("Ошибка загрузки топа:", error);
+        notify('Ошибка загрузки топа.');
+    });
+}
+
+function renderTops() {
+    const box = document.getElementById('topsList');
+    if (!box) return;
+
+    let filteredPlayers = allPlayers;
+
+    if (currentTopMode === 'friends') {
+        if (!player.friends || player.friends.length === 0) {
+            box.innerHTML = `<div class="small muted" style="text-align:center; padding:20px;">У тебя пока нет друзей. Загляни в "Мир" и добавь кого-нибудь!</div>`;
+            return;
+        }
+        filteredPlayers = allPlayers.filter(p => player.friends.includes(p.id));
+    }
+
+    if (!filteredPlayers.length) {
+        box.innerHTML = `<div class="small muted" style="text-align:center; padding:20px;">Пока никого нет в базе. Сделай упражнение и обнови список.</div>`;
+        return;
+    }
+
+    const sorted = [...filteredPlayers].sort((a, b) => (b.stats[currentTopTab] || 0) - (a.stats[currentTopTab] || 0));
+    
+    let listHtml = `<div class="small muted" style="margin-bottom:10px; font-weight:700;">Лучшие по "${EXERCISES[currentTopTab]}":</div>`;
+    
+    sorted.slice(0, 50).forEach((p, i) => {
+        const isMe = p.id === userId;
+        const val = p.stats[currentTopTab] || 0;
+        const clickAction = isMe ? '' : `onclick="openPlayerProfile('${p.id}')"`;
+        
+        listHtml += `<div class="list-item" style="${isMe ? 'background:var(--accordion-bg); padding-left:10px; padding-right:10px; border-radius:10px;' : 'cursor:pointer;'} ${isMe ? '' : 'cursor:pointer;'}" ${clickAction}>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:14px; font-weight:900; color:var(--accent-orange); width:20px;">${i+1}</span>
+                <span style="font-weight:800; color:${isMe ? 'var(--accent-orange)' : 'var(--text-main)'};">${p.name || 'Безымянный'} ${isMe ? '(Ты)' : ''}</span>
+            </div>
+            <b style="font-size:16px; font-weight:900; color:var(--accent-gold);">${fmt(val)}</b>
+        </div>`;
+    });
+
+    box.innerHTML = listHtml;
+}
+
+// --- ПРОСМОТР ПРОФИЛЯ ДРУГОГО ИГРОКА ---
+function openPlayerProfile(id) {
+    if (id === userId) return;
+    const p = allPlayers.find(x => x.id === id);
+    if (!p) return;
+    
+    const isFriend = player.friends && player.friends.includes(p.id);
+    const btnText = isFriend ? 'Удалить из друзей' : 'Добавить в друзья';
+    const btnClass = isFriend ? 'btn danger' : 'btn primary';
+    
+    let html = `
+        <div style="text-align:center; margin-bottom:15px;">
+            <div class="avatar" style="margin:0 auto; width:80px; height:80px; font-size:40px;">${p.avatar || '👤'}</div>
+            <h2 style="margin-top:10px; margin-bottom:5px;">${p.name}</h2>
+            <div class="rank-badge" style="background:${getRankObj(p.level).color}">РАНГ ${getRankObj(p.level).name}</div>
+            <div class="small muted" style="margin-top:5px;">Уровень ${p.level}</div>
+        </div>
+        <div class="list-item" style="background:var(--input-bg); padding:10px; border-radius:10px; margin-bottom:15px;">
+            <span>💪 Отжимания</span> <b>${fmt(p.stats.pushups)}</b>
+        </div>
+        <div class="list-item" style="background:var(--input-bg); padding:10px; border-radius:10px; margin-bottom:15px;">
+            <span>🧗 Подтягивания</span> <b>${fmt(p.stats.pullups)}</b>
+        </div>
+        <div class="list-item" style="background:var(--input-bg); padding:10px; border-radius:10px; margin-bottom:15px;">
+            <span>🦵 Приседания</span> <b>${fmt(p.stats.squats)}</b>
+        </div>
+        <div class="list-item" style="background:var(--input-bg); padding:10px; border-radius:10px; margin-bottom:20px;">
+            <span>👟 Шаги</span> <b>${fmt(p.stats.steps)}</b>
+        </div>
+        <button class="${btnClass}" onclick="toggleFriend('${p.id}')">${btnText}</button>
+    `;
+    
+    openModal('ПРОФИЛЬ ОХОТНИКА', html);
+}
+
+function toggleFriend(id) {
+    if (!player.friends) player.friends = [];
+    
+    const index = player.friends.indexOf(id);
+    if (index > -1) {
+        player.friends.splice(index, 1);
+        notify('Удален из друзей');
+    } else {
+        player.friends.push(id);
+        notify('Добавлен в друзья!');
+    }
+    save();
+    closeModal();
+    renderTops();
+}
+</script>
+<script>
+// --- ОТРИСОВКА ---
+function renderAll() {
+    if (!player) return;
+    
+    document.body.className = player.theme === 'dark' ? 'dark-theme' : '';
+    document.getElementById('themeBtn').textContent = player.theme === 'dark' ? '☀️' : '🌙';
+    document.getElementById('main-app').className = 'app ' + (player.bgClass || '');
+    
+    document.getElementById('walletShadows').textContent = fmt(player.shadows);
+    document.getElementById('profileAvatar').textContent = player.avatar;
+    
+    const nameEl = document.getElementById('profileName');
+    nameEl.textContent = player.name;
+    if (player.nameColor === 'rainbow') {
+        nameEl.style.background = 'linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)';
+        nameEl.style.webkitBackgroundClip = 'text';
+        nameEl.style.color = 'transparent';
+    } else {
+        nameEl.style.background = 'none';
+        nameEl.style.webkitBackgroundClip = 'unset';
+        if (player.nameColor === '#2d2d2d' || player.nameColor === '#ffffff') {
+            nameEl.style.color = 'var(--text-main)';
+        } else {
+            nameEl.style.color = player.nameColor;
+        }
+    }
+
+    const streakEl = document.getElementById('profileStreak');
+    if (player.streak > 0) {
+        streakEl.style.display = 'block';
+        streakEl.textContent = '🔥 ' + player.streak;
+    } else {
+        streakEl.style.display = 'none';
+    }
+
+    const rankObj = getRankObj(player.level);
+    const rankEl = document.getElementById('profileRank');
+    rankEl.textContent = 'РАНГ ' + rankObj.name;
+    rankEl.style.backgroundColor = rankObj.isSss ? 'transparent' : rankObj.color;
+    if (rankObj.isSss) { 
+        rankEl.style.color = '#fff'; 
+        rankEl.style.textShadow = '0 0 5px #000, 0 0 10px #000'; 
+    } 
+    else { 
+        rankEl.style.color = '#000'; 
+        rankEl.style.textShadow = 'none';
+    }
+
+    const tagEl = document.getElementById('profileTag');
+    if (player.tag) { tagEl.style.display = 'block'; tagEl.textContent = '★ ' + player.tag; }
+    else { tagEl.style.display = 'none'; }
+
+    document.getElementById('profileLevel').textContent = player.level;
+    document.getElementById('xpText').textContent = fmt(player.xp) + ' / ' + fmt(player.xpNeeded) + ' XP';
+    document.getElementById('xpBar').style.width = Math.min(100, (player.xp / player.xpNeeded) * 100) + '%';
+
+    document.getElementById('total-pushups').textContent = fmt(player.stats.pushups);
+    document.getElementById('total-pullups').textContent = fmt(player.stats.pullups);
+    document.getElementById('total-squats').textContent = fmt(player.stats.squats);
+    document.getElementById('total-steps').textContent = fmt(player.stats.steps);
+
+    renderBosses();
+    renderDungeons();
+    renderShop();
+    renderHistory();
+}
+
+function renderBosses() {
+    const box = document.getElementById('bossList');
+    box.innerHTML = Object.entries(ELEMENTS).map(([el, e]) => {
+        let rows = '';
+        for (let i = 1; i <= 10; i++) {
+            const id = el + '_' + i;
+            const defeated = !!player.bosses[id];
+            const req = bossRequirement(el, i);
+            const progress = player.stats[e.stat];
+            const bossName = e.names[i-1];
+            
+            let btnHtml = '';
+            if (defeated) {
+                btnHtml = '<span class="tiny" style="color:var(--accent-green);font-weight:bold;">ПОБЕЖДЁН</span>';
+            } else if (progress >= req) {
+                btnHtml = '<span class="tiny" style="color:var(--accent-gold);font-weight:bold;">ГОТОВ</span>';
+            } else {
+                btnHtml = `<span class="tiny" style="color:var(--text-muted);">${Math.floor((progress/req)*100)}%</span>`;
+            }
+
+            rows += `<div class="list-item">
+                <div style="flex:1;">
+                    <div style="font-weight:800;font-size:15px; margin-bottom:2px; color:${defeated ? 'var(--text-muted)' : 'var(--text-main)'}">${e.emoji} ${bossName}</div>
+                    <div class="tiny" style="color:var(--text-muted); font-weight:600;">Нужно: ${fmt(req)} ${EXERCISES[e.stat].toLowerCase()}</div>
+                </div>
+                ${btnHtml}
+            </div>`;
+        }
+        
+        const isOpen = openElements[el];
+        return `<div class="accordion">
+            <div class="accordion-header" onclick="toggleElement('${el}')">
+                <span style="color:${e.color}">${e.emoji} Стихия ${e.name}</span>
+                <span class="muted" style="font-size:12px;">${isOpen ? '▲' : '▼'}</span>
+            </div>
+            <div class="accordion-content ${isOpen ? 'active' : ''}">
+                ${rows}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderDungeons() {
+    const box = document.getElementById('dungeonList');
+    
+    if (player.dungeon) {
+        const d = player.dungeon;
+        const pct = Math.min(100, (d.current / d.target) * 100);
+        const statName = EXERCISES[d.stat];
+        const diffName = { 1: 'Легкое', 2: 'Среднее', 3: 'Сложное' }[d.diff];
+        
+        box.innerHTML = `<div style="background:var(--accordion-bg);padding:20px;border-radius:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                <b style="color:var(--text-main); font-size:16px;">${statName} (${diffName})</b>
+                <span class="tiny" style="font-weight:800; color:${d.completed ? 'var(--accent-green)' : 'var(--accent-orange)'};">${d.completed ? 'ПРОЙДЕНО' : 'В ПРОЦЕССЕ'}</span>
+            </div>
+            <div class="xp-text"><span>${fmt(d.current)} / ${fmt(d.target)}</span><span style="color:var(--accent-gold)">+${d.reward} 🌑</span></div>
+            <div class="bar-bg"><div class="bar-fill" style="width:${pct}%; background:var(--accent-orange);"></div></div>
+            ${d.completed ? `<button class="btn primary" style="margin-top:15px;" onclick="collectDungeonReward()">Забрать награду</button>` : `<div class="small muted" style="text-align:center; margin-top:15px;">Выполни задание в профиле</div>`}
+            <button class="btn secondary" style="margin-top:10px;" onclick="player.dungeon=null; dungeonStep=1; save(); renderAll();">Отменить</button>
+        </div>`;
+        return;
+    }
+
+    if (player.dungeonDate === dateKey()) {
+        box.innerHTML = `<div class="empty" style="text-align:center; padding:20px; color:var(--text-muted); font-size:14px;">Ты уже проходил подземелье сегодня. Возвращайся завтра!</div>`;
+        return;
+    }
+
+    if (dungeonStep === 1) {
+        box.innerHTML = `<div class="small muted" style="margin-bottom:10px; font-weight:700;">Выбери упражнение для подземелья:</div>` + Object.entries(EXERCISES).map(([stat, name]) => `
+            <button class="btn secondary" style="text-align:left; padding:15px; margin-bottom:10px; display:block; width:100%;" onclick="dungeonStep=2; selectedDungeonStat='${stat}'; renderDungeons();">
+                <strong style="font-size:15px;">${name}</strong>
+            </button>
+        `).join('');
+    } else if (dungeonStep === 2) {
+        const stat = selectedDungeonStat;
+        const baseReq = { pushups: 20, pullups: 5, squats: 30, steps: 1000 }[stat];
+        
+        const calcTarget = (mult) => Math.floor((baseReq + (player.level * baseReq * 0.1)) * mult);
+        const targetEasy = calcTarget(1);
+        const targetMedium = calcTarget(2.5);
+        const targetHard = calcTarget(5);
+
+        box.innerHTML = `<div class="small muted" style="margin-bottom:10px; font-weight:700;">Выбери сложность для "${EXERCISES[stat]}":</div>
+            <button class="btn secondary" style="margin-bottom:10px;" onclick="startDungeon('${stat}', 1)">Легкое (Сделать ${targetEasy} раз)</button>
+            <button class="btn secondary" style="margin-bottom:10px;" onclick="startDungeon('${stat}', 2)">Среднее (Сделать ${targetMedium} раз)</button>
+            <button class="btn secondary" style="margin-bottom:10px;" onclick="startDungeon('${stat}', 3)">Сложное (Сделать ${targetHard} раз)</button>
+            <button class="btn ghost" style="margin-top:10px;" onclick="dungeonStep=1; renderDungeons();">← Назад</button>
+        `;
+    }
+}
+
+function renderShop() {
+    const box = document.getElementById('shopList');
+    const tabs = `
+        <div class="shop-tabs">
+            <button class="shop-tab ${currentShopTab === 'avatars' ? 'active' : ''}" onclick="setShopTab('avatars')">Аватарки</button>
+            <button class="shop-tab ${currentShopTab === 'colors' ? 'active' : ''}" onclick="setShopTab('colors')">Цвета</button>
+            <button class="shop-tab ${currentShopTab === 'bgs' ? 'active' : ''}" onclick="setShopTab('bgs')">Фоны</button>
+        </div>
+    `;
+
+    const items = SHOP_ITEMS.filter(i => i.cat === currentShopTab).map(i => {
+        const owned = player.inventory.includes(i.id);
+        const equipped = (i.type === 'avatar' && player.avatar === i.value) || 
+                         (i.type === 'color' && player.nameColor === i.value) ||
+                         (i.type === 'bg' && player.bgClass === i.value);
+        
+        let contentHtml = i.type === 'avatar' ? `<div style="font-size:36px;">${i.value}</div>` : 
+                          i.type === 'color' ? `<div style="width:28px;height:28px;border-radius:50%;background:${i.value};margin:0 auto;"></div>` :
+                          `<div style="font-size:36px;">🖼️</div>`;
+
+        return `<div class="shop-item">
+            ${contentHtml}
+            <div style="font-weight:800;font-size:14px; margin-top:5px;">${i.name}</div>
+            <div class="tiny" style="color:var(--accent-gold);font-weight:900;margin-bottom:10px;">${i.price} 🌑</div>
+            <button class="btn ${equipped ? 'primary' : 'secondary'}" style="padding:8px;font-size:12px; margin:0;" ${owned || player.shadows < i.price ? (equipped ? 'disabled' : (owned ? '' : 'disabled')) : ''} onclick="buyOrEquipItem('${i.id}')">
+                ${equipped ? 'Надето' : (owned ? 'Надеть' : 'Купить')}
+            </button>
+        </div>`;
+    }).join('');
+
+    box.innerHTML = tabs + `<div class="shop-grid">${items}</div>`;
+}
+
+function setShopTab(tab) { currentShopTab = tab; renderShop(); }
+
+function buyOrEquipItem(id) {
+    const item = SHOP_ITEMS.find(x => x.id === id);
+    if (!item) return;
+    const owned = player.inventory.includes(id);
+    if (!owned) {
+        if (player.shadows >= item.price) {
+            player.shadows -= item.price;
+            player.inventory.push(id);
+            addToHistory('Куплено: ' + item.name);
+            notify('Куплено: ' + item.name);
+        } else { notify('Недостаточно Теней!'); return; }
+    }
+    if (item.type === 'avatar') player.avatar = item.value;
+    if (item.type === 'color') player.nameColor = item.value;
+    if (item.type === 'bg') player.bgClass = item.value;
+    save(); renderAll();
+}
+</script>
+<script>
+// --- НАВИГАЦИЯ И СТАРТ ---
+function go(screen) {
+    document.querySelectorAll('.screen').forEach(x => x.classList.toggle('active', x.id === 'screen-' + screen));
+    document.querySelectorAll('.nav-btn').forEach(x => x.classList.toggle('active', x.dataset.screen === screen));
+    if(screen === 'tops') loadLeaderboard();
+    window.scrollTo(0, 0);
+}
+
+function openModal(title, body, fromQueue = false) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalBody').innerHTML = body;
+    document.getElementById('modalBack').classList.add('show');
+    if (!fromQueue) isModalOpen = true;
+}
+function closeModal() { 
+    document.getElementById('modalBack').classList.remove('show'); 
+    isModalOpen = false;
+    processModalQueue();
+}
+
+function resetGame() {
+    if (confirm('Удалить весь прогресс? Это действие нельзя отменить.')) {
+        localStorage.removeItem(SAVE_KEY);
+        if(userId) db.collection('users').doc(userId).delete();
+        player = null;
+        location.reload();
+    }
+}
+
+function createCharacter() {
+    const name = document.getElementById('player-name-input').value.trim();
+    if (!name) { alert('Введи ник!'); return; }
+    
+    db.collection('users').where('name', '==', name).get().then((snapshot) => {
+        if (!snapshot.empty) {
+            alert('Этот ник уже занят! Придумай другой.');
+        } else {
+            player = freshPlayer(name);
+            player.dungeonDate = '';
+            save();
+            document.getElementById('character-creation').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            document.getElementById('bottomnav').classList.remove('hidden');
+            renderAll();
+        }
+    }).catch((err) => {
+        player = freshPlayer(name);
+        player.dungeonDate = '';
+        save();
+        document.getElementById('character-creation').classList.add('hidden');
+        document.getElementById('main-app').classList.remove('hidden');
+        document.getElementById('bottomnav').classList.remove('hidden');
+        renderAll();
+    });
+}
+
+// --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
+auth.signInAnonymously().catch((error) => {
+    console.error("Auth error:", error);
+    notify("Ошибка входа в Firebase. Проверь консоль.");
+});
+
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        userId = user.uid;
+        db.collection('users').doc(userId).get().then((doc) => {
+            if (doc.exists) {
+                player = doc.data();
+                if (!player.history) player.history = [];
+                if (!player.friends) player.friends = [];
+                
+                const today = dateKey();
+                if (player.dungeonDate !== today) { 
+                    player.dungeonDate = today; 
+                    if(player.dungeon && !player.dungeon.completed) player.dungeon = null;
+                }
+                save(); 
+                document.getElementById('character-creation').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+                document.getElementById('bottomnav').classList.remove('hidden');
+                renderAll();
+            } else {
+                document.getElementById('character-creation').classList.remove('hidden');
+                document.getElementById('main-app').classList.add('hidden');
+                document.getElementById('bottomnav').classList.add('hidden');
+            }
+        }).catch((error) => {
+            console.error("Error getting document:", error);
+            const saved = safeLoad();
+            if (saved) {
+                player = saved;
+                document.getElementById('character-creation').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+                document.getElementById('bottomnav').classList.remove('hidden');
+                renderAll();
+            }
+        });
+    } else {
+        document.getElementById('character-creation').classList.remove('hidden');
+        document.getElementById('main-app').classList.add('hidden');
+        document.getElementById('bottomnav').classList.add('hidden');
+    }
+});
+</script>
+</body>
+</html>
